@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Claude Code, before and after | iterForge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #D8DEE4;
+  --surface: #E6EBEF;
+  --sunk: #DEE4E9;
+  --ink: #2A3543;
+  --muted: #586472;
+  --line: #C3CCD5;
+  --before: #9A4339;
+  --before-wash: #E6D8D5;
+  --after: #2B5F63;
+  --after-wash: #D0DFDF;
+  --accent: #2B5F63;
+  --brand-bright: #1ABC9C;
+  --term-bg: #2F3A48;
+  --term-ink: #DCE2E8;
+  --term-muted: #93A0AF;
+  --term-prompt: #A3C4E8;
+  --term-bad: #EBA79E;
+  --term-good: #8AD3C3;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --scale: 1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10161D;
+    --surface: #18202A;
+    --sunk: #1D2631;
+    --ink: #E6EAEF;
+    --muted: #9AA5B2;
+    --line: #2C3642;
+    --before: #F2877B;
+    --before-wash: #33201E;
+    --after: #4FC1AE;
+    --after-wash: #14302C;
+    --accent: #4FC1AE;
+    --term-bg: #0C1117;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10161D;
+  --surface: #18202A;
+  --sunk: #1D2631;
+  --ink: #E6EAEF;
+  --muted: #9AA5B2;
+  --line: #2C3642;
+  --before: #F2877B;
+  --before-wash: #33201E;
+  --after: #4FC1AE;
+  --after-wash: #14302C;
+  --accent: #4FC1AE;
+  --term-bg: #0C1117;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: inherit; }
+[hidden] { display: none !important; }
+html { height: 100%; font-size: calc(16px * var(--scale)); scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.45;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+.app.rail-hidden { grid-template-columns: 0 minmax(0, 1fr); }
+.app.rail-hidden .rail { visibility: hidden; }
+
+/* Rail */
+.rail {
+  grid-row: 1 / 3;
+  border-right: 1px solid var(--line);
+  padding: 1.5rem 1rem 1rem;
+  overflow-y: auto;
+  background: var(--surface);
+}
+.rail .brand-logo { margin-left: 0.5rem; }
+.theme-btn {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  border: 1px solid var(--line); background: var(--sunk); color: var(--ink);
+  border-radius: 999px; padding: 0.4rem 0.85rem; cursor: pointer;
+  font-size: 0.9rem; font-weight: 700;
+}
+.theme-btn:hover { border-color: var(--ink); }
+.theme-btn svg { display: block; flex-shrink: 0; width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.theme-btn .sun { display: none; }
+.theme-btn.is-dark .sun { display: inline; }
+.theme-btn.is-dark .moon { display: none; }
+.theme-top { margin: 0 0.5rem 1.1rem; }
+.rail .theme-btn {
+  width: auto; display: inline-flex; grid-template-columns: none; align-items: center; line-height: 1.2;
+  background: var(--sunk); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 999px; padding: 0.4rem 0.85rem; font-size: 0.9rem; font-weight: 700;
+}
+.rail .theme-btn::before { content: none; }
+@media (max-width: 1024px), (pointer: coarse) { .rail .theme-top { display: none !important; } }
+.rail .theme-btn:hover { border-color: var(--ink); background: var(--sunk); }
+.rail h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin: 0 0.5rem 0.25rem;
+  letter-spacing: -0.01em;
+}
+.rail p { margin: 0 0.5rem 1.25rem; color: var(--muted); font-size: 0.85rem; }
+.rail ol { list-style: none; margin: 0; padding: 0; }
+.rail button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0.55rem 0.5rem;
+  border-radius: 6px;
+  display: grid;
+  grid-template-columns: 1.6rem 1fr;
+  align-items: baseline;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+.rail button::before { content: attr(data-n); font-variant-numeric: tabular-nums; font-size: 0.8rem; }
+.rail button:hover { background: var(--sunk); color: var(--ink); }
+.rail button[aria-current="true"] { background: var(--ink); color: var(--surface); font-weight: 700; }
+
+/* Stage */
+.stage { overflow-y: auto; padding: 2rem clamp(1.25rem, 3vw, 3rem) 1.5rem; }
+.stage-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem 2rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+}
+.count { margin: 0 0 0.35rem; color: var(--muted); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4.2vw, 3.6rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  max-width: 22ch;
+}
+.lesson { margin: 0.6rem 0 0; font-size: 1.2rem; color: var(--muted); max-width: 60ch; }
+
+.modes {
+  display: inline-flex;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 3px;
+  background: var(--surface);
+}
+.modes button {
+  border: 0;
+  background: none;
+  padding: 0.5rem 1.15rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.modes button[aria-selected="true"][data-mode="before"] { background: var(--before); color: var(--surface); }
+.modes button[aria-selected="true"][data-mode="after"] { background: var(--after); color: var(--surface); }
+.modes button[aria-selected="true"][data-mode="compare"] { background: var(--ink); color: var(--surface); }
+
+/* Panes */
+.panes { display: grid; gap: 1.25rem; }
+.panes.compare { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pane {
+  background: var(--surface);
+  border-radius: 10px;
+  border-left: 8px solid var(--side);
+  padding: 1.25rem 1.25rem 1.1rem;
+  min-width: 0;
+}
+.pane.before { --side: var(--before); --wash: var(--before-wash); }
+.pane.after { --side: var(--after); --wash: var(--after-wash); }
+.pane-title {
+  margin: 0 0 1rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--side);
+  letter-spacing: -0.02em;
+}
+.blocks { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.panes.compare .blocks { grid-template-columns: minmax(0, 1fr); }
+.block h3 { margin: 0 0 0.45rem; font-size: 0.95rem; font-weight: 700; color: var(--muted); }
+pre {
+  margin: 0;
+  background: var(--term-bg);
+  color: var(--term-ink);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  max-width: 100%;
+}
+pre .p { color: var(--term-prompt); }
+pre .bad { color: var(--term-bad); }
+pre .good { color: var(--term-good); }
+pre .dim { color: var(--term-muted); }
+pre .file { color: var(--term-muted); font-style: italic; }
+
+.verdicts { list-style: none; margin: 1.1rem 0 0; padding: 0; display: grid; gap: 0.45rem; }
+.verdicts li {
+  background: var(--wash);
+  border-radius: 6px;
+  padding: 0.55rem 0.8rem 0.55rem 2.2rem;
+  position: relative;
+  font-size: 1.02rem;
+}
+.verdicts li::before {
+  position: absolute;
+  left: 0.8rem;
+  font-weight: 800;
+  color: var(--side);
+}
+.before .verdicts li::before { content: "✗"; }
+.after .verdicts li::before { content: "✓"; }
+
+.enter { animation: enter 220ms ease-out; }
+@keyframes enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .enter { animation: none; } }
+
+
+.visual { margin: 0 0 1rem; background: var(--sunk); border-radius: 8px; padding: 0.9rem 1rem 1rem; }
+.visual figcaption { font-weight: 700; color: var(--muted); font-size: 0.95rem; margin-bottom: 0.6rem; }
+.visual svg { display: block; width: 100%; height: auto; max-height: 26rem; }
+.visual text { font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif; font-size: 16px; fill: var(--ink); }
+.visual .v-on { fill: var(--surface); font-weight: 700; }
+.visual .v-muted { fill: var(--muted); }
+.visual .v-mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 15px; }
+.v-bad { fill: var(--before); }
+.v-good { fill: var(--after); }
+.v-work { fill: var(--line); }
+.v-chip { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.v-line { fill: none; stroke: var(--muted); stroke-width: 2; }
+.visual .v-small { font-size: 13px; }
+.visual .v-strong { font-weight: 800; font-size: 18px; }
+.v-head { fill: var(--muted); }
+.v-dot { fill: var(--surface); stroke: var(--muted); stroke-width: 2; }
+.howto { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: 0.9rem; }
+.howto h3 { margin: 0 0 0.45rem; font-size: 0.95rem; font-weight: 700; color: var(--muted); }
+.howto ul { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.35rem; }
+.howto li { font-size: 1rem; max-width: 70ch; }
+
+.rail .group { margin: 1.1rem 0.5rem 0.3rem; font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+.rail .start { font-weight: 700; color: var(--ink); }
+
+.brand-logo { display: block; height: 1.6rem; width: auto; fill: var(--ink); margin: 0 0.5rem 1.1rem; }
+.brand-logo text { font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif; font-size: 44px; font-weight: 400; fill: var(--ink); }
+.brand-bar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
+.brand-bar .brand-logo { height: 2.2rem; margin: 0; }
+.brand-bar span { color: var(--muted); font-size: 0.95rem; border-left: 1px solid var(--line); padding-left: 0.75rem; }
+
+
+/* Intro */
+.intro { display: grid; gap: 1.5rem; }
+.intro-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.side {
+  background: var(--surface);
+  border-radius: 10px;
+  border-left: 8px solid var(--side);
+  padding: 1.1rem 1.25rem;
+}
+.side.can { --side: var(--after); }
+.side.cant { --side: var(--before); }
+.side h2 { margin: 0 0 0.6rem; font-size: 1.35rem; font-weight: 800; color: var(--side); letter-spacing: -0.01em; }
+.side ul { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.4rem; font-size: 1.08rem; }
+.habits-title { margin: 0.5rem 0 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; }
+.habits { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; counter-reset: habit; }
+.habit {
+  counter-increment: habit;
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 1rem 1.1rem 1.1rem;
+  border-top: 6px solid var(--after);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.habit::before { content: counter(habit); font-size: 2.4rem; font-weight: 800; line-height: 1; color: var(--line); }
+.habit h3 { margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; }
+.habit p { margin: 0; color: var(--muted); }
+.habit .links { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: auto; padding-top: 0.5rem; }
+.habit .links button {
+  border: 1px solid var(--line);
+  background: var(--sunk);
+  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-align: left;
+}
+.habit .links button:hover { border-color: var(--ink); }
+.tips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.tip-col { background: var(--surface); border-radius: 10px; padding: 1rem 1.25rem; border: 1px solid var(--line); }
+.tip-col h2 { margin: 0 0 0.5rem; font-size: 1.2rem; font-weight: 700; }
+.tip-col ul { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.35rem; font-size: 1.02rem; }
+.tip-col code { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.9em; background: var(--sunk); border: 1px solid var(--line); border-radius: 4px; padding: 0 0.3em; }
+@media (max-width: 860px) { .tips { grid-template-columns: minmax(0, 1fr); } }
+.intro-foot { margin: 0; color: var(--muted); font-size: 1.05rem; }
+.is-intro .modes { visibility: hidden; }
+@media (max-width: 1100px) { .habits { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 860px) {
+  .intro-split, .habits { grid-template-columns: minmax(0, 1fr); }
+  .rail .group { display: none; }
+}
+
+/* Notes */
+.notes {
+  margin-top: 1.25rem;
+  border: 2px dashed var(--line);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+.notes h3 { margin: 0 0 0.3rem; font-size: 1rem; }
+.notes p { margin: 0; color: var(--muted); }
+
+/* Footer */
+.keys {
+  grid-column: 2;
+  border-top: 1px solid var(--line);
+  padding: 0.6rem clamp(1.25rem, 3vw, 3rem);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.4rem;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: var(--bg);
+}
+.app.rail-hidden .keys { grid-column: 1 / 3; }
+.keys .hint { white-space: nowrap; }
+kbd {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  font-size: 0.78rem;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+  background: var(--surface);
+  color: var(--ink);
+}
+.nav { margin-left: auto; display: flex; gap: 0.5rem; }
+.nav button {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+.disclaimer { flex-basis: 100%; min-width: 0; font-size: 0.78rem; white-space: normal; overflow-wrap: anywhere; }
+
+@media (max-width: 1100px) {
+  .blocks { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 860px) {
+  .app, .app.rail-hidden { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; }
+  .rail { grid-row: 1; border-right: 0; border-bottom: 1px solid var(--line); padding: 0.75rem; }
+  .rail h2, .rail p { display: none; }
+  .rail ol { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.25rem; scroll-snap-type: x proximity; }
+  .rail li { flex: none; scroll-snap-align: start; }
+  .rail button { white-space: nowrap; grid-template-columns: 1.3rem auto; border: 1px solid var(--line); background: var(--sunk); border-radius: 999px; padding: 0.45rem 0.9rem; }
+  .rail button[aria-current="true"] { border-color: var(--ink); }
+  .rail button.start { grid-template-columns: auto; justify-content: center; }
+  .rail button.start::before { display: none; }
+  .app.rail-hidden .rail { visibility: visible; }
+  .keys, .app.rail-hidden .keys { grid-column: 1; }
+  .panes.compare { grid-template-columns: minmax(0, 1fr); }
+  .stage-head { grid-template-columns: minmax(0, 1fr); }
+  .notes { grid-template-columns: minmax(0, 1fr); }
+  .keys .hint { display: none; }
+  .keys { padding: 0.6rem 1rem; }
+  .nav { margin-left: 0; width: 100%; justify-content: space-between; }
+  .rail .theme-top { display: none; }
+  .brand-bar { display: none; }
+  .rail .brand-logo { margin-bottom: 0.6rem; }
+  .stage { padding: 1.25rem 1rem 1rem; }
+  .modes { justify-self: start; }
+  .pane { padding: 1rem 0.9rem; border-left-width: 6px; }
+  pre { font-size: 0.85rem; padding: 0.85rem 0.9rem; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="rail" aria-label="Examples">
+    <button class="theme-btn theme-top" type="button" aria-label="Switch theme"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/><g class="sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg><span>Dark mode</span></button>
+    <svg class="brand-logo" viewBox="0 0 247 47" role="img" aria-label="iterForge">
+      <path d="M2 0H24L47 23V45Q47 47 45 47H33Q31 47 31 45V15.6H2Q0 15.6 0 13.6V2Q0 0 2 0Z"/>
+      <path d="M0 31H15.5V45Q15.5 47 13.5 47H2Q0 47 0 45Z"/>
+      <text x="60" y="38" textLength="184" lengthAdjust="spacingAndGlyphs">iterForge</text>
+    </svg>
+    <h2>Claude Code, before and after</h2>
+    <p>Same task, two ways of asking.</p>
+    <ol id="list"></ol>
+  </aside>
+
+  <main class="stage" id="stage">
+    <div class="brand-bar"><svg class="brand-logo" viewBox="0 0 247 47" role="img" aria-label="iterForge">
+      <path d="M2 0H24L47 23V45Q47 47 45 47H33Q31 47 31 45V15.6H2Q0 15.6 0 13.6V2Q0 0 2 0Z"/>
+      <path d="M0 31H15.5V45Q15.5 47 13.5 47H2Q0 47 0 45Z"/>
+      <text x="60" y="38" textLength="184" lengthAdjust="spacingAndGlyphs">iterForge</text>
+    </svg><span>Developer session</span></div>
+    <div class="stage-head">
+      <div>
+        <p class="count" id="count"></p>
+        <h1 id="title"></h1>
+        <p class="lesson" id="lesson"></p>
+      </div>
+      <div class="modes" role="tablist" aria-label="View">
+        <button role="tab" data-mode="before">Before</button>
+        <button role="tab" data-mode="after">After</button>
+        <button role="tab" data-mode="compare">Compare</button>
+      </div>
+    </div>
+    <section class="intro" id="intro" hidden>
+      <div class="intro-split">
+        <div class="side can">
+          <h2>On its own, it can</h2>
+          <ul>
+            <li>Read and search your whole repo</li>
+            <li>Run commands: tests, builds, git</li>
+            <li>Edit many files in one go</li>
+            <li>Use connected tools like Figma, Linear, or Datadog</li>
+          </ul>
+        </div>
+        <div class="side cant">
+          <h2>It can’t, unless you help</h2>
+          <ul>
+            <li>Know your team’s unwritten rules</li>
+            <li>Know why a change is needed or what “done” means</li>
+            <li>Guarantee its work is correct, so reviews and checks still matter</li>
+            <li>Be trusted with secrets or client data it doesn’t need</li>
+          </ul>
+        </div>
+      </div>
+      <h2 class="habits-title">Four habits that make the difference</h2>
+      <div class="habits" id="habits"></div>
+      <div class="tips">
+        <div class="tip-col">
+          <h2>Pick the right model</h2>
+          <ul>
+            <li><strong>Sonnet</strong> for everyday coding, debugging and tests</li>
+            <li><strong>Opus</strong> for hard problems: design, tricky bugs, big plans</li>
+            <li><strong>Haiku</strong> for quick, simple jobs like renames or small scripts</li>
+            <li>Switch any time with <code>/model</code></li>
+          </ul>
+        </div>
+        <div class="tip-col">
+          <h2>Keep context lean</h2>
+          <ul>
+            <li><code>/clear</code> between unrelated tasks</li>
+            <li><code>/compact</code> when a long session starts drifting</li>
+            <li><code>/context</code> to see what’s filling the window</li>
+            <li>Point at files with <code>@path</code> and paste only the relevant log lines</li>
+          </ul>
+        </div>
+      </div>
+      <p class="intro-foot">Each example shows the same task twice: how most people ask, and what works better. Press → to start, or pick an example above.</p>
+    </section>
+    <section class="panes" id="panes" aria-live="polite"></section>
+    <section class="notes" id="notes" hidden>
+      <div><h3>Ask the room</h3><p id="ask"></p></div>
+      <div><h3>Presenter note</h3><p id="tip"></p></div>
+    </section>
+  </main>
+
+  <footer class="keys">
+    <span class="hint"><kbd>←</kbd> <kbd>→</kbd> example</span>
+    <span class="hint"><kbd>B</kbd> <kbd>A</kbd> <kbd>C</kbd> view</span>
+    <span class="hint"><kbd>N</kbd> notes</span>
+    <span class="hint"><kbd>M</kbd> menu</span>
+    <span class="hint"><kbd>+</kbd> <kbd>−</kbd> text size</span>
+    <span class="hint"><kbd>T</kbd> theme</span>
+    <span class="hint"><kbd>F</kbd> full screen</span>
+    <div class="nav">
+      <button id="theme" class="theme-btn" type="button" aria-label="Switch theme"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/><g class="sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg><span>Dark mode</span></button>
+      <button id="prev" aria-label="Previous example">Previous</button>
+      <button id="next" aria-label="Next example">Next</button>
+    </div>
+    <span class="disclaimer">Transcripts are condensed and illustrative. Real runs vary, so rehearse any live demo and keep a recording as backup.</span>
+  </footer>
+</div>
+
+<script>
+/*
+  Line markers inside transcripts:
+  "> " prompt   "! " problem   "+ " success   "# " dim comment   "@ " file name
+*/
+
+/* Visual helpers: small SVG diagrams built from the same shapes */
+function vEsc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function vWrap(h, label, inner) { return `<svg viewBox="0 0 640 ${h}" role="img" aria-label="${vEsc(label)}">${inner}</svg>`; }
+function vChip(x, y, w, label, tone, h = 36) {
+  const cls = { bad: "v-bad", good: "v-good", work: "v-work" }[tone] || "v-chip";
+  const tc = tone === "bad" || tone === "good" ? "v-on" : "";
+  let text = "";
+  if (label) {
+    const need = label.length * (tc ? 7.8 : 7) + 18;
+    const size = need <= w ? 16 : Math.max(11, Math.floor(16 * (w - 18) / (need - 18)));
+    text = `<text class="${tc}" x="${x + 12}" y="${y + h / 2 + 5}" style="font-size:${size}px">${vEsc(label)}</text>`;
+  }
+  return `<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>${text}`;
+}
+function vArrow(x1, y, x2) {
+  return `<path class="v-line" d="M${x1} ${y} H${x2 - 8}"/><path class="v-head" d="M${x2 - 11} ${y - 6} L${x2} ${y} L${x2 - 11} ${y + 6} Z"/>`;
+}
+function vFlow(label, leftTitle, left, rightTitle, right, midLabel = "Claude") {
+  const n = Math.max(left.length, right.length);
+  const top = 28, step = 46;
+  const col = (items, x, w) => {
+    const off = ((n - items.length) * step) / 2;
+    return items.map(([t, tone], i) => vChip(x, top + off + i * step, w, t, tone)).join("");
+  };
+  const mid = top + (n * step - 10) / 2;
+  return vWrap(top + n * step, label,
+    `<text class="v-muted v-small" x="0" y="15">${vEsc(leftTitle)}</text>
+     <text class="v-muted v-small" x="350" y="15">${vEsc(rightTitle)}</text>
+     ${col(left, 0, 250)}${vArrow(262, mid, 338)}
+     <text class="v-muted v-small" x="300" y="${mid - 10}" text-anchor="middle">${vEsc(midLabel)}</text>
+     ${col(right, 350, 290)}`);
+}
+function vTimeline(label, rows, axis) {
+  const x0 = 80, W = 560, step = 50;
+  let out = "";
+  rows.forEach((r, i) => {
+    const y = i * step;
+    out += `<text class="v-muted" x="0" y="${y + 23}">${vEsc(r.name)}</text>`;
+    let x = x0;
+    r.segs.forEach(([f, t, tone]) => { const w = f * W - 4; out += vChip(x, y, w, t, tone); x += f * W; });
+  });
+  const h = rows.length * step + (axis ? 14 : -14);
+  if (axis) out += `<text class="v-muted v-small" x="${x0}" y="${h - 2}">${vEsc(axis[0])}</text><text class="v-muted v-small" x="640" y="${h - 2}" text-anchor="end">${vEsc(axis[1])}</text>`;
+  return vWrap(h, label, out);
+}
+function vLayers(label, items) {
+  const step = 52;
+  let out = `<path class="v-line" d="M14 18 V${(items.length - 1) * step + 18}"/>`;
+  items.forEach(([t, tone, note], i) => {
+    const y = i * step;
+    out += `<circle class="v-dot" cx="14" cy="${y + 18}" r="6"/>`;
+    out += vChip(30, y, 340, t, tone);
+    out += `<text class="v-muted" x="388" y="${y + 23}">${vEsc(note)}</text>`;
+  });
+  return vWrap(items.length * step - 16, label, out);
+}
+function vLanes(label, cols) {
+  const gap = 16, w = (640 - gap * (cols.length - 1)) / cols.length, top = 28, step = 46;
+  const n = Math.max(...cols.map((c) => c.items.length));
+  let out = "";
+  cols.forEach((c, ci) => {
+    const x = ci * (w + gap);
+    out += `<text class="v-muted v-small" x="${x}" y="15">${vEsc(c.title)}</text>`;
+    c.items.forEach((it, i) => {
+      const [t, tone] = Array.isArray(it) ? it : [it, c.tone];
+      out += vChip(x, top + i * step, w, t, tone);
+    });
+  });
+  return vWrap(top + n * step - 10, label, out);
+}
+function vRows(label, rows) {
+  const step = 50, x0 = 116, w = 124, gap = 6;
+  let out = "";
+  rows.forEach((r, i) => {
+    const y = i * step;
+    out += `<text class="v-muted" x="0" y="${y + 23}">${vEsc(r.name)}</text>`;
+    r.files.forEach(([t, tone], j) => { out += vChip(x0 + j * (w + gap), y, w, t, tone); });
+  });
+  return vWrap(rows.length * step - 14, label, out);
+}
+function vFiles(label, n, tone, summary, notes = []) {
+  let out = "";
+  for (let i = 0; i < n; i++) out += vChip(i * 50, 0, 42, "", tone, 42);
+  out += `<text x="0" y="74" class="v-strong">${vEsc(summary)}</text>`;
+  notes.forEach((t, i) => { out += vChip(0, 92 + i * 46, 400, t, "chip"); });
+  return vWrap(notes.length ? 92 + notes.length * 46 - 10 : 82, label, out);
+}
+function vPR(label, o) {
+  const W = 640, rowH = 30;
+  let y = 0, out = "";
+  const body = [];
+  body.push(`<text x="18" y="30" style="font-weight:700;font-size:17px">${vEsc(o.title)}</text>`);
+  body.push(`<text class="v-muted" x="18" y="53" style="font-size:14px">${vEsc(o.stat)}</text>`);
+  body.push(`<path class="v-line" style="stroke:var(--line);stroke-width:1" d="M0 68 H${W}"/>`);
+  y = 80;
+  const max = Math.max(...o.files.map((f) => f[1] + f[2]), 1);
+  o.files.forEach(([name, add, del]) => {
+    body.push(`<rect class="v-work" x="18" y="${y + 3}" width="11" height="15" rx="2"/>`);
+    body.push(`<text class="v-mono" x="38" y="${y + 16}" style="font-size:14px">${vEsc(name)}</text>`);
+    const scale = 1.5, aw = Math.max(add * scale, add ? 3 : 0), dw = Math.max(del * scale, del ? 3 : 0);
+    const bx = W - 250;
+    body.push(`<rect class="v-good" x="${bx}" y="${y + 5}" width="${aw}" height="10" rx="2"/>`);
+    body.push(`<rect class="v-bad" x="${bx + aw + 2}" y="${y + 5}" width="${dw}" height="10" rx="2"/>`);
+    body.push(`<text class="v-muted" x="${W - 18}" y="${y + 16}" text-anchor="end" style="font-size:14px">+${add} −${del}</text>`);
+    y += rowH;
+  });
+  if (o.more) { body.push(`<text class="v-muted" x="38" y="${y + 16}" style="font-size:14px">${vEsc(o.more)}</text>`); y += rowH; }
+  if (o.notes) {
+    y += 6;
+    const nh = 34 + o.notes.length * 24;
+    body.push(`<rect x="18" y="${y}" width="${W - 36}" height="${nh}" rx="6" style="fill:var(--sunk);stroke:var(--line)"/>`);
+    body.push(`<text x="32" y="${y + 23}" style="font-weight:700;font-size:14px">Noticed, not changed</text>`);
+    o.notes.forEach((n, i) => body.push(`<text class="v-muted" x="32" y="${y + 47 + i * 24}" style="font-size:14px">${vEsc(n)}</text>`));
+    y += nh + 4;
+  }
+  y += 10;
+  const pillW = 230;
+  body.push(`<rect class="${o.tone === "good" ? "v-good" : "v-bad"}" x="18" y="${y}" width="${pillW}" height="32" rx="16"/>`);
+  body.push(`<text class="v-on" x="${18 + pillW / 2}" y="${y + 21}" text-anchor="middle" style="font-size:14px">${vEsc(o.review)}</text>`);
+  y += 46;
+  out = `<rect x="0.5" y="0.5" width="${W - 1}" height="${y - 1}" rx="8" style="fill:var(--surface);stroke:var(--line)"/>` + body.join("");
+  return vWrap(y, label, out);
+}
+function vCyl(cx, top, label, sub, cls) {
+  const rx = 78, ry = 11, h = 62;
+  return `<path class="${cls}" d="M${cx - rx} ${top} V${top + h} A${rx} ${ry} 0 0 0 ${cx + rx} ${top + h} V${top} Z"/>
+    <ellipse class="${cls}" cx="${cx}" cy="${top}" rx="${rx}" ry="${ry}" style="filter:brightness(1.12)"/>
+    <text class="v-on" x="${cx}" y="${top + 34}" text-anchor="middle" style="font-size:15px">${vEsc(label)}</text>
+    <text class="v-on" x="${cx}" y="${top + 54}" text-anchor="middle" style="font-size:12px;font-weight:400;opacity:.9">${vEsc(sub)}</text>`;
+}
+function vArrowTo(x1, y1, x2, y2, color, dashed) {
+  const ang = Math.atan2(y2 - y1, x2 - x1), hx = x2 - 11 * Math.cos(ang), hy = y2 - 11 * Math.sin(ang);
+  const p1 = `${hx - 6 * Math.sin(ang)} ${hy + 6 * Math.cos(ang)}`, p2 = `${hx + 6 * Math.sin(ang)} ${hy - 6 * Math.cos(ang)}`;
+  return `<path d="M${x1} ${y1} L${hx} ${hy}" style="fill:none;stroke:${color};stroke-width:3;${dashed ? "stroke-dasharray:6 5;" : ""}"/>
+    <path d="M${x2} ${y2} L${p1} L${p2} Z" style="fill:${color}"/>`;
+}
+function vProd(label, blocked) {
+  const t = (y, txt, c) => `<text x="16" y="${y}" style="font-family:JetBrains Mono,ui-monospace,monospace;font-size:13px;fill:${c}">${vEsc(txt)}</text>`;
+  const term = `<rect x="0" y="0" width="320" height="214" rx="8" style="fill:var(--term-bg)"/>
+    <circle cx="16" cy="14" r="4" style="fill:var(--term-muted)"/><circle cx="30" cy="14" r="4" style="fill:var(--term-muted)"/><circle cx="44" cy="14" r="4" style="fill:var(--term-muted)"/>
+    ${t(44, "# Yesterday: debugging a live issue", "var(--term-muted)")}
+    ${t(66, "$ export DATABASE_URL=", "var(--term-ink)")}
+    ${t(86, "    postgres://prod-db/shop", "var(--term-bad)")}
+    ${t(114, "# Today: same terminal, still set", "var(--term-muted)")}
+    ${t(136, "$ claude", "var(--term-ink)")}
+    ${t(158, "> Reset the orders table", "var(--term-prompt)")}
+    ${t(182, blocked ? "TRUNCATE orders → checked first" : "TRUNCATE orders → $DATABASE_URL", blocked ? "var(--term-good)" : "var(--term-bad)")}
+    ${t(204, blocked ? "# Hook: production? Block it." : "# Uses whatever address is set", "var(--term-muted)")}`;
+  const red = "var(--before)", teal = "var(--after)", grey = "var(--muted)";
+  let right;
+  if (!blocked) {
+    right = vCyl(552, 16, "Production", "real customer orders", "v-bad") +
+      vCyl(552, 128, "Local database", "not used", "v-work").replace(/class="v-on"/g, 'class=""') +
+      vArrowTo(322, 180, 470, 60, red);
+  } else {
+    right = vCyl(552, 16, "Production", "untouched", "v-work").replace(/class="v-on"/g, 'class=""') +
+      vCyl(552, 128, "Local database", "safe to reset", "v-good") +
+      vArrowTo(322, 180, 470, 60, grey, true) +
+      `<circle cx="402" cy="118" r="15" style="fill:var(--before)"/><text x="402" y="123" text-anchor="middle" style="font-size:15px;font-weight:800;fill:var(--surface)">✕</text>` +
+      `<text x="422" y="113" style="font-size:12px;font-weight:700;fill:var(--before)">hook</text><text x="422" y="128" style="font-size:12px;font-weight:700;fill:var(--before)">blocks</text>` +
+      vArrowTo(322, 196, 470, 170, teal);
+  }
+  return vWrap(216, label, term + right);
+}
+function vPrompts(label) {
+  const cmds = ["npm run test", "git status", "npm run lint", "git diff", "git push --force"];
+  let out = "";
+  cmds.forEach((c, i) => {
+    const x = i * 26, y = i * 30, last = i === cmds.length - 1;
+    out += `<rect x="${x}" y="${y}" width="330" height="92" rx="8" style="fill:var(--surface);stroke:${last ? "var(--before)" : "var(--line)"};stroke-width:${last ? 2.5 : 1.5}"/>`;
+    out += `<text x="${x + 16}" y="${y + 24}" style="font-size:13px;fill:var(--muted)">Claude wants to run:</text>`;
+    out += `<text x="${x + 16}" y="${y + 47}" style="font-family:JetBrains Mono,ui-monospace,monospace;font-size:15px;font-weight:600;fill:${last ? "var(--before)" : "var(--ink)"}">${vEsc(c)}</text>`;
+    out += `<rect x="${x + 16}" y="${y + 60}" width="58" height="24" rx="5" class="v-work"/><text x="${x + 45}" y="${y + 77}" text-anchor="middle" style="font-size:13px;font-weight:700">Yes</text>`;
+    out += `<rect x="${x + 82}" y="${y + 60}" width="58" height="24" rx="5" style="fill:none;stroke:var(--line)"/><text x="${x + 111}" y="${y + 77}" text-anchor="middle" style="font-size:13px">No</text>`;
+  });
+  const lx = 4 * 26, ly = 4 * 30;
+  const tx = lx + 52, ty = ly + 78;
+  out += `<path d="M${tx} ${ty} l0 24 l6 -6 l5 11 l5 -2 l-5 -11 l8 -1 Z" style="fill:var(--ink);stroke:var(--surface);stroke-width:1.5;stroke-linejoin:round"/>`;
+  out += `<text x="${tx + 26}" y="${ty + 36}" style="font-size:14px;font-weight:700;fill:var(--before)">Clicked Yes on autopilot</text>`;
+  out += `<text x="470" y="60" style="font-size:44px;font-weight:800;fill:var(--before)">22</text>`;
+  out += `<text x="470" y="84" class="v-muted" style="font-size:14px">approval prompts</text>`;
+  out += `<text x="470" y="102" class="v-muted" style="font-size:14px">in one session</text>`;
+  return vWrap(ly + 132, label, out);
+}
+function vGate(label, rows) {
+  const step = 48, top = 34;
+  const h = top + rows.length * step + 4;
+  let out = `<text class="v-muted v-small" x="0" y="16">Claude wants to run</text>
+    <text class="v-muted v-small" x="452" y="16">What happens</text>
+    <rect x="262" y="${top - 12}" width="120" height="${rows.length * step + 8}" rx="10" style="fill:var(--sunk);stroke:var(--line);stroke-width:1.5"/>
+    <text x="322" y="${top + 2}" text-anchor="middle" class="v-small" style="font-weight:700">Your rules</text>
+    <text x="322" y="${top + 18}" text-anchor="middle" class="v-muted v-small">settings.json</text>`;
+  rows.forEach(([cmd, result, tone], i) => {
+    const y = top + 16 + i * step;
+    out += `<rect x="0" y="${y}" width="220" height="34" rx="6" class="v-chip"/>`;
+    out += `<text x="12" y="${y + 22}" style="font-family:JetBrains Mono,ui-monospace,monospace;font-size:14px">${vEsc(cmd)}</text>`;
+    const color = tone === "good" ? "var(--after)" : tone === "bad" ? "var(--before)" : "var(--muted)";
+    out += `<path d="M222 ${y + 17} H262" style="stroke:var(--muted);stroke-width:2"/>`;
+    out += vArrowTo(382, y + 17, 448, y + 17, color, tone === "chip");
+    const icon = tone === "good" ? "✓" : tone === "bad" ? "✕" : "?";
+    out += `<rect x="452" y="${y}" width="188" height="34" rx="6" class="${tone === "good" ? "v-good" : tone === "bad" ? "v-bad" : "v-chip"}"/>`;
+    out += `<text x="466" y="${y + 22}" class="${tone === "chip" ? "" : "v-on"}" style="font-size:15px">${icon}  ${vEsc(result)}</text>`;
+  });
+  return vWrap(h + 10, label, out);
+}
+function vBanner(x, y, o) {
+  const st = (c, extra = "") => `style="fill:${c};${extra}"`;
+  const icon = o.leaf
+    ? `<path ${st("#ffffff", "opacity:.92")} d="M${x + 22} ${y + 74} C${x + 22} ${y + 44} ${x + 44} ${y + 36} ${x + 58} ${y + 38} C${x + 58} ${y + 64} ${x + 42} ${y + 76} ${x + 22} ${y + 74} Z"/>`
+    : `<circle ${st("#ffffff", "opacity:.92")} cx="${x + 40}" cy="${y + 56}" r="17"/>`;
+  return `<rect ${st(o.fill)} x="${x}" y="${y}" width="290" height="128" rx="${o.r}"/>
+    ${icon}
+    <text ${st("#ffffff", `font-size:${o.ts}px;font-weight:800;font-family:${o.font}`)} x="${x + 74}" y="${y + 48}">Spring sale</text>
+    <text ${st("#ffffff", "opacity:.85;font-size:14px")} x="${x + 74}" y="${y + 70}">Up to 30% off vitamins</text>
+    <rect ${st("#ffffff")} x="${x + 74}" y="${y + 84 + o.by}" width="104" height="28" rx="${o.br}"/>
+    <text ${st(o.fill, "font-size:13px;font-weight:700")} x="${x + 92}" y="${y + 103 + o.by}">Shop now</text>`;
+}
+function vMark(x, y, good) {
+  return `<circle class="${good ? "v-good" : "v-bad"}" cx="${x}" cy="${y}" r="11"/><text class="v-on" x="${x}" y="${y + 5}" text-anchor="middle" style="font-size:14px">${good ? "✓" : "!"}</text>`;
+}
+const DESIGN = { fill: "#1E6A4E", r: 12, ts: 24, font: "DM Sans, sans-serif", leaf: true, by: 0, br: 14 };
+function vFigma(label, built, marks, good) {
+  return vWrap(162, label,
+    `<text class="v-muted v-small" x="0" y="14">Figma design</text>
+     <text class="v-muted v-small" x="340" y="14">What got built</text>
+     ${vBanner(0, 26, DESIGN)}${vBanner(340, 26, built)}
+     ${marks.map(([mx, my]) => vMark(mx, my, good)).join("")}`);
+}
+
+const EXAMPLES = [
+  {
+    title: "Give context, not just a task",
+    lesson: "Tell Claude where, why, what to reuse, and when it’s done.",
+    before: {
+      visuals: [{ caption: "One vague line in, guesses out", svg: vFlow("A vague prompt leads to three wrong guesses", "Your prompt", [["Add a search bar", "chip"]], "Claude guesses", [["Creates a duplicate service", "bad"], ["Requests on every keystroke", "bad"], ["Hardcodes colors", "bad"]]) }],
+      setupLabel: "What you type",
+      setup: `> Add a search bar to the header`,
+      result: `@ Created search/search.module.ts
+! NgModule in a standalone-only app
+@ Created services/search-api.service.ts
+! search(q) { return this.http.get('/api/search?q=' + q) }
+! Fires a request on every keystroke
+.search { background: #ffffff; color: #333333; }
+Done!`,
+      verdicts: [
+        "Duplicates a search service that already exists",
+        "No debounce, so it hammers a rate-limited API",
+        "Hardcoded colors instead of design tokens"
+      ]
+    },
+    after: {
+      visuals: [{ caption: "Four facts in, a result that fits", svg: vFlow("Where, why, reuse and done-when lead to a result that fits", "Your prompt", [["Where: header component", "chip"], ["Why: users can’t find items", "chip"], ["Reuse: search service", "chip"], ["Done when: tested, lint clean", "chip"]], "Claude delivers", [["Reuses the existing service", "good"], ["Debounced for the rate limit", "good"], ["Tested and lint clean", "good"]]) }],
+      setupLabel: "What you type",
+      setup: `> Add a search bar to @src/app/header/header.component.ts
+  Why: users can’t reach products from non-PLP pages.
+  Reuse @src/app/core/api/product-search.service.ts
+  Debounce 300ms, the search API is rate-limited.
+  Done when: keyboard accessible, unit tested, lint passes.`,
+      result: `# Plan: 1 new component, 1 line in header template
+@ Created header-search.component.ts (standalone, OnPush)
+  query = signal('')
+  results = toSignal(toObservable(this.query).pipe(
+    debounceTime(300), switchMap(q => this.search.find(q))))
+@ Created header-search.component.spec.ts
+@ Edited header.component.html (+1 line)
++ npm run lint   clean
++ npm test       4 passed`,
+      verdicts: [
+        "Reuses the existing service",
+        "Respects the rate limit because it knew why",
+        "Checked its own work against “done when”"
+      ]
+    },
+    ask: "If you were a new joiner given only the first prompt, what would you need to ask before writing code?",
+    tip: "Read the before prompt aloud, collect answers, then show that the after prompt is just those answers written down."
+  },
+  {
+    title: "Write it once in CLAUDE.md",
+    lesson: "One file in the repo turns your team’s rules into defaults Claude follows in every session.",
+    before: {
+      setupLabel: "New session, no CLAUDE.md",
+      setup: `> Send a welcome email when a customer signs up`,
+      visuals: [{ caption: "Without CLAUDE.md, Claude has to guess", svg: vFlow("Only the prompt goes in, so Claude guesses and breaks team rules", "What Claude gets", [["Prompt: send a welcome email", "chip"]], "What you get", [["A new email library", "bad"], ["Customer emails in the logs", "bad"], ["Committed straight to main", "bad"]]) }],
+      result: `@ Created send-welcome.ts
+! npm install nodemailer   (we already have EmailService)
+! console.log("Sent to", customer.email)
+! No tests added
+! Committed to main: "welcome email"
+Done!
+
+# Next session: you explain the same rules again`,
+      verdicts: [
+        "Added a second way to send email",
+        "Customer email addresses end up in the logs",
+        "No tests, no review, no ticket"
+      ]
+    },
+    after: {
+      setupLabel: "CLAUDE.md in the repo root",
+      setup: `# Shop platform
+
+## Commands
+- Run tests: npm test
+
+## How we build
+- Send emails only through EmailService
+- Never log customer details (email, phone, address)
+
+## Ask first
+- Before adding any new library
+
+## Git
+- Never commit to main. Branch: feature/<short-name>
+- Commit messages start with the ticket: [SHOP-123]`,
+      visuals: [{ caption: "With CLAUDE.md, the team’s rules come along automatically", svg: vFlow("The prompt plus CLAUDE.md go in, so Claude follows team rules", "What Claude gets", [["Prompt: send a welcome email", "chip"], ["CLAUDE.md: team rules", "good"]], "What you get", [["Uses the existing EmailService", "good"], ["Logs the customer ID only", "good"], ["Branch, test, ticketed commit", "good"]]) }],
+      result: `> Send a welcome email when a customer signs up
+@ Edited signup.ts
++ Uses EmailService.send('welcome', customer)
++ Logs "Welcome email sent" with the customer ID only
+Which ticket is this for?
+> SHOP-512
++ Added test: signing up sends one welcome email
++ npm test   passed
++ Branch feature/welcome-email
++ Commit "[SHOP-512] Send welcome email on signup"`,
+      verdicts: [
+        "Reuses the team’s email service",
+        "Keeps customer details out of the logs",
+        "Tested, on a branch, with a ticketed commit"
+      ],
+      howto: [
+        "Run /init to generate a first draft from your repo, then trim it",
+        "Keep it short and specific: it’s loaded into every session, so every line costs context",
+        "Commit it and review changes to it like code",
+        "Add a CLAUDE.md inside a folder for rules that only apply there"
+      ]
+    },
+    ask: "What rules does every new joiner on your team get wrong in their first month?",
+    tip: "Point out that the prompt is identical in both. The only difference is one file in the repo."
+  },
+  {
+    title: "Build UI from Figma, not from a screenshot",
+    lesson: "The Figma MCP gives Claude real tokens and structure instead of pixels to guess from.",
+    before: {
+      visuals: [{ caption: "Built from a screenshot: four differences", svg: vFigma("Design and build differ in color, corners, icon and button", { fill: "#3D8C64", r: 22, ts: 20, font: "Arial, sans-serif", leaf: false, by: 6, br: 3 }, [[620, 40], [392, 60], [548, 64], [532, 128]], false) }],
+      setupLabel: "What you type",
+      setup: `> Build this promo banner
+  [promo-banner.png attached]`,
+      result: `.banner {
+! padding: 20px;
+! background: #2f6b4f;
+! border-radius: 10px;
+}
+.title {
+! font-size: 26px; font-family: Arial;
+}
+! <svg> hand-drawn guess at the leaf icon </svg>`,
+      verdicts: [
+        "Spacing and color are eyeballed",
+        "Wrong typeface, invented icon",
+        "Nothing links back to the design system"
+      ]
+    },
+    after: {
+      visuals: [{ caption: "Built from the Figma file: matches", svg: vFigma("Design and build match", DESIGN, [[620, 40]], true) }],
+      setupLabel: "Frame selected in Figma",
+      setup: `> Implement the selected Figma frame as a standalone
+  Angular component. Use get_design_context for layout
+  and get_variable_defs for tokens. Map to our CSS
+  variables and reuse src/app/shared/ui where it fits.
+  Then screenshot localhost and compare with the frame.`,
+      result: `# get_variable_defs: color/brand/700, space/400, radius/md
+.banner {
+  padding: var(--space-400);
+  background: var(--color-brand-700);
+  border-radius: var(--radius-md);
+}
++ Reused <app-button variant="primary">
++ Icon exported from Figma as an asset
+# Compared screenshots
+! Title line-height off by 4px
++ Fixed, re-compared, matches`,
+      verdicts: [
+        "Exact tokens instead of approximations",
+        "Reuses components you already have",
+        "Verification loop catches drift before you do"
+      ]
+    },
+    ask: "How much time does your team spend in review on spacing and color fixes?",
+    tip: "Be honest about the limit: output is only as good as the Figma file. Auto layout, named layers, and real variables matter."
+  },
+  {
+    title: "Turn team standards into a skill",
+    lesson: "A skill packages how your team does a task. Claude loads it only when the task matches.",
+    before: {
+      visuals: [{ caption: "Same request, different output", svg: vRows("Two developers get different files and patterns", [{ name: "Developer A", files: [["component.ts", "chip"], [".html", "chip"], ["inline styles", "bad"], ["no spec", "bad"]] }, { name: "Developer B", files: [["component.ts", "chip"], [".html", "chip"], [".scss", "chip"], ["@Input()", "bad"]] }]) }],
+      setupLabel: "Two developers, same request",
+      setup: `> Create a product badge component`,
+      result: `# Developer A got:
+! Default change detection, inline styles, no spec
+# Developer B got:
+! Standalone and a spec, but @Input() decorators
+! instead of signal inputs
+# Reviewer leaves 9 comments across both PRs`,
+      verdicts: [
+        "Same request, inconsistent output",
+        "Standards live in people’s heads",
+        "Review catches it late, every time"
+      ]
+    },
+    after: {
+      visuals: [{ caption: "One skill, identical structure", svg: vRows("Both developers get the same four files", [{ name: "Developer A", files: [["component.ts", "good"], [".html", "good"], [".scss", "good"], [".spec.ts", "good"]] }, { name: "Developer B", files: [["component.ts", "good"], [".html", "good"], [".scss", "good"], [".spec.ts", "good"]] }]) }],
+      setupLabel: ".claude/skills/angular-component/SKILL.md",
+      setup: `---
+name: angular-component
+description: Use when creating a new Angular
+  component in this repo.
+---
+- Standalone, OnPush, input() and output() signals
+- Files: name.component.ts / .html / .scss / .spec.ts
+- Spec covers render and one user interaction
+- Styles use var(--*) tokens only`,
+      result: `> Create a product badge component
+# Using skill: angular-component
+@ product-badge.component.ts   standalone, OnPush
+  label = input.required<string>()
+  tone = input<'sale' | 'new'>('new')
+@ product-badge.component.html
+@ product-badge.component.scss  tokens only
+@ product-badge.component.spec.ts  2 tests
++ Same structure for every developer`,
+      verdicts: [
+        "Team standard encoded once, versioned in git",
+        "Only loaded when relevant, so it doesn’t cost context every session",
+        "Consistent output means faster reviews"
+      ]
+    },
+    ask: "Which recurring task has the most review comments on your team? That’s your first skill.",
+    tip: "Contrast with CLAUDE.md: CLAUDE.md is always loaded, a skill is pulled in when the task matches its description."
+  },
+  {
+    title: "Use hooks for rules that must never break",
+    lesson: "A hook is your own script that runs before or after Claude acts. Unlike an instruction, it can’t be skipped or forgotten.",
+    before: {
+      visuals: [{ caption: "Why it hit production: the terminal was still pointing there", svg: vProd("A production database address left set from yesterday is used by today’s reset command", false) }],
+      setupLabel: "What you type",
+      setup: `> Reset the orders table so I can test checkout from scratch`,
+      result: `Running: psql "$DATABASE_URL" -c "TRUNCATE orders"
+TRUNCATE TABLE
+Done! The orders table is empty.
+
+# DATABASE_URL was still set to production
+! Every real order is gone
+! Restore from backup, incident call, apology email`,
+      verdicts: [
+        "One command, wrong database, real damage",
+        "Nothing stopped it: the command looked routine",
+        "“Never touch production” in CLAUDE.md is a request, not a guarantee"
+      ]
+    },
+    after: {
+      visuals: [{ caption: "Same terminal, but the hook checks before anything runs", svg: vProd("The hook blocks the reset on production and Claude resets the local database instead", true) }],
+      setupLabel: ".claude/settings.json and hook script",
+      setup: `{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "\\"$CLAUDE_PROJECT_DIR\\"/.claude/hooks/protect-prod.sh"
+      }]
+    }]
+  }
+}
+
+# protect-prod.sh
+CMD=$(jq -r '.tool_input.command // empty')
+if echo "$CMD" | grep -qiE 'drop|truncate|delete from' \
+   && [[ "$CMD $DATABASE_URL" == *prod* ]]; then
+  echo "Blocked: destructive SQL on production. Use the local database." >&2
+  exit 2
+fi`,
+      result: `> Reset the orders table so I can test checkout from scratch
+! PreToolUse hook blocked the command
+# Blocked: destructive SQL on production. Use the local database.
+Running: psql "postgres://localhost/shop_dev" -c "TRUNCATE orders"
++ Local orders table emptied
++ Production untouched`,
+      verdicts: [
+        "Checked before the command runs, every time",
+        "The hook’s message steers Claude to the safe option",
+        "Your most important rules don’t depend on anyone remembering"
+      ],
+      howto: [
+        "PreToolUse runs before a tool call and can block it",
+        "Exit code 2 blocks the action and sends your message back to Claude",
+        "Commit hooks in .claude/settings.json so the whole team is protected",
+        "Run /hooks to see what’s active"
+      ]
+    },
+    ask: "What’s the one command in your project that should never run against production?",
+    tip: "Contrast: an instruction in CLAUDE.md is followed most of the time, a hook every time. And unlike a permission rule, a hook can check context, such as which database a command targets."
+  },
+  {
+    title: "Plan before touching files",
+    lesson: "Plan mode lets Claude read, search, and ask questions without editing anything. Correct it while it’s cheap.",
+    before: {
+      visuals: [{ caption: "Edits first, finds out later", svg: vFlow("Claude starts editing straight away and the work is redone after review", "What Claude does first", [["Starts editing right away", "chip"]], "What happens", [["Rebuilds an API that already exists", "bad"], ["Misses guests and analytics", "bad"], ["Most work redone after review", "bad"]], "then") }],
+      setupLabel: "What you type",
+      setup: `> Add a wishlist icon with item count to the header`,
+      result: `@ Created wishlist/wishlist.service.ts
+! Stores wishlist items in localStorage
+@ Created wishlist-icon.component.ts
+@ Edited header.component.html and 6 more files
+Done!
+
+# In review:
+! An /api/wishlist endpoint already exists
+! Guest count never syncs after login
+! No analytics event, so marketing can’t track it
+# Most of the work gets thrown away`,
+      verdicts: [
+        "Built a parallel system instead of using the existing API",
+        "Unasked questions turned into wrong assumptions",
+        "Problems found in review, after the work was done"
+      ]
+    },
+    after: {
+      visuals: [{ caption: "Reads, asks, plans, then edits", svg: vFlow("Claude reads the code, asks questions and gets the plan approved before editing", "What Claude does first", [["Reads the existing code", "good"], ["Asks you two questions", "good"], ["Shows the plan for approval", "good"]], "What happens", [["Reuses the existing wishlist API", "good"], ["Handles guests and analytics", "good"], ["Right the first time", "good"]], "then") }],
+      setupLabel: "Shift+Tab until the mode shows plan",
+      setup: `> Add a wishlist icon with item count to the header.
+  Explore first. Ask me anything unclear before
+  proposing a plan.`,
+      result: `# Plan mode: reading only, no files changed
+Read core/api/wishlist.service.ts   found GET /api/wishlist
+Read header.component.ts, auth.store.ts
+Questions:
+  1. Guests: hide the icon, or show it and ask to log in?
+  2. Fire the existing trackEvent() on click?
+> 1. Show it, open login on click. 2. Yes.
+Plan:
+  1. WishlistIconComponent, count from WishlistService
+  2. Guest click opens the existing LoginDialog
+  3. trackEvent('wishlist_open') on click
+  4. Specs for guest and logged-in states
+  Files: 2 new, 2 edited. Nothing outside the header.
+> Approved
++ Switches to editing and follows the plan`,
+      verdicts: [
+        "Found the existing API before writing any code",
+        "Questions answered up front instead of in review",
+        "Scope and file list visible before anything changes"
+      ],
+      howto: [
+        "Shift+Tab cycles the modes: normal, auto-accept edits, and plan",
+        "In plan mode Claude reads and searches but doesn’t edit files",
+        "Ask for three things in the plan: open questions, files it will touch, and risks",
+        "Use it when a change spans several files, crosses a team boundary, or you’re unsure of the approach",
+        "Ask Claude to save the approved plan to a file and reuse it in the PR description"
+      ]
+    },
+    ask: "Think of a change where your first approach turned out wrong. When did you find out?",
+    tip: "Pause on the questions step. That’s the moment that saves the rework."
+  },
+  {
+    title: "Find the cause, not a place to hide it",
+    lesson: "Ask for the explanation first. A fix you can’t explain is a patch.",
+    before: {
+      visuals: [{ caption: "The patch hides the cause", svg: vLayers("The duplicate email is hidden while the cause keeps happening", [["Two emails per order", "chip", "Hidden with a skip check"], ["Order created twice", "bad", "Still happening"], ["One click sends two requests", "bad", "Real cause, untouched"]]) }],
+      setupLabel: "What you type",
+      setup: `> Customers get two order confirmation emails. Fix it.`,
+      result: `@ Edited email.service
+Added a check: skip if this order already
+got an email
+Fixed! Customers now get one email.
+
+! Emails look fine, but every order is still
+! created twice
+! Some customers are charged twice`,
+      verdicts: [
+        "The visible symptom was hidden",
+        "The real problem, a double charge, got harder to spot",
+        "Guards on symptoms make bugs quieter, not gone"
+      ]
+    },
+    after: {
+      visuals: [{ caption: "Trace down, fix at the source", svg: vLayers("The duplicate email is traced to a double request and fixed there", [["Two emails per order", "chip", "Explained first"], ["Order created twice", "chip", "Found in the logs"], ["One click sends two requests", "good", "Fixed at the source"]]) }],
+      setupLabel: "What you type",
+      setup: `> Customers get two order confirmation emails.
+  Before changing anything, explain why it’s
+  sent twice. Trace where it’s triggered.`,
+      result: `# One email is sent per order created
+# Logs: two orders created 40 ms apart, same cart
+# The Place order button sends the request on click
+# and again on form submit
+! Root cause: one click sends the order twice
++ Fix: send it once, disable the button while it runs
++ Server now rejects a duplicate order for the same cart
++ Added a test: one click creates one order`,
+      verdicts: [
+        "Fixing the cause fixed the emails and the double charge",
+        "You understand the bug, not just the diff",
+        "The test covers what actually broke"
+      ]
+    },
+    ask: "Would you have approved the first fix? It makes the complaint go away.",
+    tip: "Pause after Before and ask the room to vote. Most approve it, which is exactly the point."
+  },
+  {
+    title: "Ask for the smallest change",
+    lesson: "Left unconstrained, Claude tends to improve everything nearby. Reviewers pay for that.",
+    before: {
+      visuals: [{ caption: "The pull request your reviewer receives", svg: vPR("A one-line fix arrives as an eleven-file pull request", { title: "Fix misaligned icon in header nav", stat: "11 files changed   +412 −198", files: [["nav-item.component.ts (new)", 96, 0], ["nav-config.ts (new)", 54, 0], ["_nav.mixins.scss (new)", 61, 0], ["header-nav.component.html", 38, 52], ["header-nav.component.scss", 22, 71], ["footer.component.html", 30, 18]], more: "…and 5 more files", review: "Review: about 45 minutes", tone: "bad" }) }],
+      setupLabel: "What you type",
+      setup: `> Fix the misaligned icon in the header nav`,
+      result: `@ Created NavItemComponent
+@ Introduced NavConfig interface
+@ Moved styles to a new _nav.mixins.scss
+@ Updated 8 templates
+! 11 files changed, +412 −198
+Fixed the alignment and cleaned up the nav!`,
+      verdicts: [
+        "A one-line bug became an unreviewable PR",
+        "Unrelated refactor raises regression risk",
+        "Hard to revert just the fix"
+      ]
+    },
+    after: {
+      visuals: [{ caption: "The pull request your reviewer receives", svg: vPR("A one-line fix arrives as a one-line pull request, with extras listed separately", { title: "Fix misaligned icon in header nav", stat: "1 file changed   +1 −1", files: [["header-nav.component.scss", 1, 1]], notes: ["Icon styles are duplicated in 3 files", "Nav items could share one component"], review: "Review: about 1 minute", tone: "good" }) }],
+      setupLabel: "What you type",
+      setup: `> Fix the misaligned icon in the header nav.
+  Smallest possible change. Don’t refactor
+  surrounding code. List anything else you
+  notice separately.`,
+      result: `@ Edited header-nav.component.scss
+- .nav-item { display: flex; }
++ .nav-item { display: flex; align-items: center; }
++ 1 file changed, +1 −1
+
+# Noticed, not changed:
+# - Icon styles duplicated in 3 files
+# - Nav items could share one component`,
+      verdicts: [
+        "Reviewable in ten seconds",
+        "Improvements are surfaced, not smuggled in",
+        "You decide whether the refactor is worth a ticket"
+      ]
+    },
+    ask: "Would you rather review the first PR or the second at 6 pm on a Friday?",
+    tip: "The “list anything else separately” line is what keeps the useful observations without the scope creep."
+  },
+  {
+    title: "Allow the safe, deny the risky",
+    lesson: "Permission rules cut approval fatigue, so the prompts that remain get read.",
+    before: {
+      visuals: [{ caption: "Every command asks, so people stop reading", svg: vPrompts("A pile of approval prompts, and the risky force push gets approved on autopilot") }],
+      setupLabel: "Default permissions",
+      setup: `# A typical 20-minute session`,
+      result: `Allow: npm run test?        y
+Allow: git status?          y
+Allow: npm run lint?        y
+Allow: git diff?            y
+# …18 more prompts…
+! Allow: git push --force?  y
+# Approved on autopilot`,
+      verdicts: [
+        "Constant interruptions for harmless commands",
+        "People stop reading and approve everything",
+        "The one risky prompt slips through"
+      ]
+    },
+    after: {
+      visuals: [{ caption: "Your rules decide, so only real questions reach you", svg: vGate("Safe commands run silently, risky ones are blocked, anything new still asks", [["npm run test", "Runs, no prompt", "good"], ["git status", "Runs, no prompt", "good"], ["git push --force", "Blocked", "bad"], ["Read .env", "Blocked", "bad"], ["npm install leaflet", "Asks you", "chip"]]) }],
+      setupLabel: ".claude/settings.json",
+      setup: `{
+  "permissions": {
+    "allow": [
+      "Bash(npm run test:*)",
+      "Bash(npm run lint)",
+      "Bash(git status)",
+      "Bash(git diff:*)"
+    ],
+    "deny": [
+      "Bash(git push:*)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  }
+}`,
+      result: `+ npm run test     ran, no prompt
++ git status       ran, no prompt
++ npm run lint     ran, no prompt
+! git push         blocked by deny rule
+! Read .env        blocked by deny rule
+# Prompts are rare now, so they get attention`,
+      verdicts: [
+        "Safe, routine commands run without interruption",
+        "Risky actions blocked outright, not left to a tired click",
+        "Secrets stay out of context, which matters on client work"
+      ]
+    },
+    ask: "Be honest: how many approval prompts did you actually read last week?",
+    tip: "Commit the project settings so the team shares the rules. Personal tweaks go in settings.local.json."
+  }
+];
+
+const INTRO = {
+  title: "Claude Code works like a fast new teammate",
+  lesson: "It reads your repo, runs commands, and edits files by itself. But it only knows what it can see or what you tell it, and its work needs checking like anyone new.",
+  ask: "Who has used Claude Code this week? What did it get wrong?",
+  tip: "Keep this to two minutes. The examples make the argument; this screen just gives the room a map."
+};
+
+const GROUPS = [
+  { title: "Give it context", line: "It only knows what it can see or what you tell it.",
+    members: ["Give context, not just a task", "Write it once in CLAUDE.md", "Build UI from Figma, not from a screenshot"] },
+  { title: "Think before editing", line: "Understand the problem and agree on the approach before code changes.",
+    members: ["Plan before touching files", "Find the cause, not a place to hide it"] },
+  { title: "Change only what’s needed", line: "Small changes in your team’s style are fast to review.",
+    members: ["Turn team standards into a skill", "Ask for the smallest change"] },
+  { title: "Automate and guard", line: "Let config handle the routine and block the risky, so you don’t have to watch.",
+    members: ["Use hooks for rules that must never break", "Allow the safe, deny the risky"] }
+];
+const ORDER = GROUPS.flatMap((g) => g.members);
+EXAMPLES.sort((x, y) => ORDER.indexOf(x.title) - ORDER.indexOf(y.title));
+EXAMPLES.forEach((ex) => { ex.group = GROUPS.findIndex((g) => g.members.includes(ex.title)); });
+
+const $ = (id) => document.getElementById(id);
+const app = $("app");
+const list = $("list");
+const panes = $("panes");
+const notes = $("notes");
+const modeButtons = [...document.querySelectorAll(".modes button")];
+
+let index = -1;
+let mode = "before";
+let scale = 1;
+
+try {
+  const saved = parseFloat(localStorage.getItem("ba-scale"));
+  if (saved >= 0.8 && saved <= 1.6) scale = saved;
+} catch (e) {}
+
+function escapeHTML(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function renderTranscript(text) {
+  return text.split("\n").map((line) => {
+    const safe = escapeHTML(line);
+    if (line.startsWith("> ")) return `<span class="p">${safe}</span>`;
+    if (line.startsWith("! ")) return `<span class="bad">${escapeHTML(line.slice(2))}</span>`;
+    if (line.startsWith("+ ")) return `<span class="good">${escapeHTML(line.slice(2))}</span>`;
+    if (line.startsWith("# ")) return `<span class="dim">${escapeHTML(line.slice(2))}</span>`;
+    if (line.startsWith("@ ")) return `<span class="file">${escapeHTML(line.slice(2))}</span>`;
+    if (line.startsWith("- ")) return `<span class="bad">${safe}</span>`;
+    return safe;
+  }).join("\n");
+}
+
+function paneHTML(side, data) {
+  const label = side === "before" ? "Before" : "After";
+  return `
+    <article class="pane ${side}">
+      <h2 class="pane-title">${label}</h2>
+      ${(data.visuals || []).map((v) => `<figure class="visual"><figcaption>${escapeHTML(v.caption)}</figcaption>${v.svg}</figure>`).join("")}
+      <div class="blocks">
+        <div class="block">
+          <h3>${escapeHTML(data.setupLabel)}</h3>
+          <pre>${renderTranscript(data.setup)}</pre>
+        </div>
+        <div class="block">
+          <h3>What Claude does</h3>
+          <pre>${renderTranscript(data.result)}</pre>
+        </div>
+      </div>
+      <ul class="verdicts">${data.verdicts.map((v) => `<li>${escapeHTML(v)}</li>`).join("")}</ul>
+    </article>`;
+}
+
+function renderList() {
+  let html = `<li><button class="start" data-i="-1" data-n="">Start here</button></li>`;
+  let last = -1;
+  EXAMPLES.forEach((ex, i) => {
+    if (ex.group !== last) { html += `<li class="group">${escapeHTML(GROUPS[ex.group].title)}</li>`; last = ex.group; }
+    html += `<li><button data-i="${i}" data-n="${i + 1}">${escapeHTML(ex.title)}</button></li>`;
+  });
+  list.innerHTML = html;
+  list.querySelectorAll("button").forEach((b) =>
+    b.addEventListener("click", () => go(parseInt(b.dataset.i, 10), "before"))
+  );
+  $("habits").innerHTML = GROUPS.map((g) => `
+    <div class="habit">
+      <h3>${escapeHTML(g.title)}</h3>
+      <p>${escapeHTML(g.line)}</p>
+      <div class="links">${g.members.map((t) => {
+        const i = EXAMPLES.findIndex((e) => e.title === t);
+        return `<button data-i="${i}">${i + 1}. ${escapeHTML(t)}</button>`;
+      }).join("")}</div>
+    </div>`).join("");
+  $("habits").querySelectorAll("button").forEach((b) =>
+    b.addEventListener("click", () => go(parseInt(b.dataset.i, 10), "before"))
+  );
+}
+
+function render(animate = true) {
+  const intro = index === -1;
+  app.classList.toggle("is-intro", intro);
+  $("intro").hidden = !intro;
+  panes.hidden = intro;
+  list.querySelectorAll("button").forEach((b) =>
+    b.setAttribute("aria-current", parseInt(b.dataset.i, 10) === index ? "true" : "false")
+  );
+  if (intro) {
+    $("count").textContent = "Start here";
+    $("title").textContent = INTRO.title;
+    $("lesson").textContent = INTRO.lesson;
+    $("ask").textContent = INTRO.ask;
+    $("tip").textContent = INTRO.tip;
+    document.title = "Claude Code, before and after | iterForge";
+    try { history.replaceState(null, "", "#0"); } catch (e) {}
+    return;
+  }
+  const ex = EXAMPLES[index];
+  $("count").textContent = `${index + 1} of ${EXAMPLES.length}: ${GROUPS[ex.group].title}`;
+  $("title").textContent = ex.title;
+  $("lesson").textContent = ex.lesson;
+  $("ask").textContent = ex.ask;
+  $("tip").textContent = ex.tip;
+
+  modeButtons.forEach((b) => b.setAttribute("aria-selected", b.dataset.mode === mode ? "true" : "false"));
+
+  panes.classList.toggle("compare", mode === "compare");
+  panes.innerHTML = mode === "compare"
+    ? paneHTML("before", ex.before) + paneHTML("after", ex.after)
+    : paneHTML(mode, ex[mode]);
+
+  if (animate) {
+    panes.classList.remove("enter");
+    void panes.offsetWidth;
+    panes.classList.add("enter");
+  }
+  document.title = `${ex.title} | iterForge`;
+  try { history.replaceState(null, "", `#${index + 1}`); } catch (e) {}
+}
+
+function go(i, newMode) {
+  const total = EXAMPLES.length + 1;
+  index = ((i + 1 + total) % total) - 1;
+  if (newMode) mode = newMode;
+  render();
+  $("stage").scrollTop = 0;
+}
+
+function setMode(m) {
+  if (index === -1 || m === mode) return;
+  mode = m;
+  render();
+}
+
+function applyScale() {
+  document.documentElement.style.setProperty("--scale", scale);
+  try { localStorage.setItem("ba-scale", String(scale)); } catch (e) {}
+}
+
+function isDarkNow() {
+  const current = document.documentElement.getAttribute("data-theme");
+  return current ? current === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+function syncThemeButton() {
+  const dark = isDarkNow();
+  document.querySelectorAll(".theme-btn").forEach((b) => {
+    b.classList.toggle("is-dark", dark);
+    b.querySelector("span").textContent = dark ? "Light mode" : "Dark mode";
+    b.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
+  });
+}
+function setTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  try { localStorage.setItem("ba-theme", t); } catch (e) {}
+  syncThemeButton();
+}
+function cycleTheme() {
+  setTheme(isDarkNow() ? "light" : "dark");
+}
+try {
+  const savedTheme = localStorage.getItem("ba-theme");
+  if (savedTheme === "light" || savedTheme === "dark") document.documentElement.setAttribute("data-theme", savedTheme);
+} catch (e) {}
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", syncThemeButton);
+document.querySelectorAll(".theme-btn").forEach((b) => b.addEventListener("click", cycleTheme));
+
+modeButtons.forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
+$("prev").addEventListener("click", () => go(index - 1, "before"));
+$("next").addEventListener("click", () => go(index + 1, "before"));
+
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === "arrowright" || k === "pagedown") { e.preventDefault(); go(index + 1, "before"); }
+  else if (k === "arrowleft" || k === "pageup") { e.preventDefault(); go(index - 1, "before"); }
+  else if (k === "b") setMode("before");
+  else if (k === "a") setMode("after");
+  else if (k === "c") setMode("compare");
+  else if (k === " ") { e.preventDefault(); setMode(mode === "before" ? "after" : mode === "after" ? "compare" : "before"); }
+  else if (k === "n") notes.hidden = !notes.hidden;
+  else if (k === "m") app.classList.toggle("rail-hidden");
+  else if (k === "t") cycleTheme();
+  else if (k === "+" || k === "=") { scale = Math.min(1.6, +(scale + 0.1).toFixed(2)); applyScale(); }
+  else if (k === "-" || k === "_") { scale = Math.max(0.8, +(scale - 0.1).toFixed(2)); applyScale(); }
+  else if (k === "f") {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+    else document.exitFullscreen?.();
+  }
+});
+
+const fromHash = parseInt(location.hash.slice(1), 10);
+if (fromHash >= 1 && fromHash <= EXAMPLES.length) index = fromHash - 1;
+else index = -1;
+
+applyScale();
+syncThemeButton();
+renderList();
+render(false);
+</script>
+</body>
+</html>
